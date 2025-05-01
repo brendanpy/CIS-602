@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.stats import entropy
 
 def parsePacket(packet):
+    #clear packet info for each packet
     packet_info = {
         'ttl': 0,
         'len': 0,
@@ -17,8 +18,8 @@ def parsePacket(packet):
         ip_layer = packet["IP"]
         raw = list(ip_layer.original)
 
-        packet_info['ttl'] = ip_layer.ttl
-        packet_info['len'] = ip_layer.len
+        packet_info['ttl'] = ip_layer.ttl# Time to live
+        packet_info['len'] = ip_layer.len # Packet length
         
           # Check if the PACKET is TCP
         if packet.haslayer("TCP"):
@@ -37,4 +38,4 @@ def parsePacket(packet):
 if not os.path.exists("TCP_Capture.csv"):
     pd.DataFrame(columns=['ttl', 'len', 'sport', 'dport', 'flags', 'entropy']).to_csv("TCP_Capture.csv", index=False)
 
-sniff(iface="en11", prn= parsePacket, store=False)
+sniff(iface="en11", prn= parsePacket, store=False) #sniff on en11 interface with calllback to parsePacket

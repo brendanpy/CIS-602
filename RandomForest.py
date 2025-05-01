@@ -6,8 +6,8 @@ from rich import print
 from sklearn.preprocessing import StandardScaler
 
 def realtimePredict(packet):
- 
-    packet_info = {
+    #clear packet info for each packet
+    packet_info = { 
         'ttl': 0,
         'len': 0,
         'sport': 0,
@@ -21,9 +21,8 @@ def realtimePredict(packet):
         ip_layer = packet["IP"]
         raw = list(ip_layer.original)
 
-        packet_info['ttl'] = ip_layer.ttl
-        packet_info['len'] = ip_layer.len
-
+        packet_info['ttl'] = ip_layer.ttl #Time to live
+        packet_info['len'] = ip_layer.len #packet length
         
         # Check if the PACKET is TCP
         if packet.haslayer("TCP"):
@@ -40,25 +39,25 @@ def realtimePredict(packet):
                 print(f"Debug Break")
 
         
-            packetFrame = pd.DataFrame([packet_info])
+            packetFrame = pd.DataFrame([packet_info])   #convert dict to DataFrame
+ 
+            scaled_packet = scaler.transform(packetFrame) #normalize the packet data
 
-            scaled_packet = scaler.transform(packetFrame)
-
-            result = forest.predict(scaled_packet)
+            result = forest.predict(scaled_packet) #determine if packet is normal (1) or anomaly (-1)
             if result[0] == -1:
                 print(f"[red]Anomaly detected[/]\n{packet.summary()}")
             else:
                 print("[green]Normal packet[/]")
 
 
-trainingData = pd.read_csv("TCP_Capture.csv")
+trainingData = pd.read_csv("TCP_Capture.csv") #load training data
  
-scaler = StandardScaler()
+scaler = StandardScaler() #initialize StandardScaler object and then normalize the data
 scaled_data = scaler.fit_transform(trainingData[['ttl', 'len', 
                          'sport', 'dport', 'flags', 
                           'entropy']])
 
-forest = IsolationForest(contamination=0.1)
-forest.fit(scaled_data)
+forest = IsolationForest(contamination=0.1) #instantiate IsolationForest object with default contamination
+forest.fit(scaled_data) #fit the model with the training data
 
-sniff(iface="en11", prn=realtimePredict, store=False)
+sniff(iface="en11", prn=realtimePredict, store=False) #sniff on en11 interface with calllback to realtimePredict
